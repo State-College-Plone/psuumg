@@ -1,0 +1,14 @@
+<configure xmlns="http://namespaces.zope.org/zope"
+           xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+           i18n_domain="Products.psuumg">
+
+    <genericsetup:registerProfile
+        name="default"
+        title="psuumg"
+        directory="profiles/default"
+        description="Penn State UMGs in Plone"
+        provides="Products.GenericSetup.interfaces.EXTENSION"
+    />
+
+</configure>
+
