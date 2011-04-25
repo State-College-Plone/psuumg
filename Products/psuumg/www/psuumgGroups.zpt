@@ -1,0 +1,189 @@
+<h1 tal:replace="structure here/manage_page_header">Header</h1>
+
+<h2 tal:define="form_title string:ZODB Groups"
+    tal:replace="structure here/manage_tabs"> TABS </h2>
+
+
+<tal:block tal:define="adding python:bool(request.get('adding', False));
+                       updating python:'group_id' in request and not adding;
+                       browsing python:(not adding and not updating);">
+
+<div tal:condition="browsing">
+<div>
+
+<h3>Current User Managed Groups <a href="?adding=1">(Add a UMG)</a></h3>
+
+<table width="100%" cellpadding="2" cellspacing="0">
+
+ <tr>
+  <th align="left">*</th>
+  <th align="left">Actions</th>
+  <th align="left">Title</th>
+  <th align="left">Description</th>
+  <th align="left">DN</th>
+ </tr>
+
+ <form action="." method="POST">
+
+ <tal:umgs-block define="umgs here/listGroupInfo">
+ <tr class="row-hilite"
+     tal:repeat="umg python:umgs"
+     tal:attributes="class python:repeat['umg'].odd() and 'row-normal' or default">
+  <td>
+    <input type="checkbox" name="ids:list" value="ID" tal:attributes="value umg" />
+  </td>
+  <td>
+    <a tal:attributes="href python:'?group_id=%s' % umg['id']">update</a>
+  </td>
+  <td>
+    <span tal:content="umg/title">TITLE</span>
+  </td>
+  <td>
+    <span tal:content="umg/description">DESCRIPTION</span>
+  </td>
+    <td>
+      <span tal:content="umg/dn">DN</span>
+    </td>
+ </tr>
+ </tal:umgs-block>
+
+ <tr>
+  <td colspan="4">
+    <input type="hidden" name="ids:list:default" value="" />
+    <input type="submit" name="manage_removeUMGs:method"
+           value=" Remove UMG " />
+  </td>
+ </tr>
+
+ </form>
+
+</table>
+
+</div>
+</div>
+
+<!-- ==================================================================== -->
+
+<div tal:condition="adding">
+<div tal:define="umg_id request/umg_id | python:'';
+                 login_name request/login_name | python:'';
+                 role request/roles | python:();">
+
+<h3> Add a UMG </h3>
+
+<form action="manage_addUMG" method="POST">
+<table>
+
+ <tr valign="top">
+  <th align="right">
+   <div class="form-label">Id</div>
+  </th>
+  <td>
+   <input tal:attributes="value request/group_id | nothing;" type="text" name="group_id" size="20" />
+  </td>
+ </tr>
+
+ <tr valign="top">
+  <th align="right">
+   <div class="form-label">DN</div>
+  </th>
+  <td>
+   <input tal:attributes="value request/dn | nothing;" type="text" name="dn" size="80" />
+  </td>
+ </tr>
+
+ <tr valign="top">
+  <th align="right">
+   <div class="form-label">Title</div>
+  </th>
+  <td>
+   <input tal:attributes="value request/title | nothing;" type="text" name="title" size="80" />
+  </td>
+ </tr>
+
+ <tr valign="top">
+  <th align="right">
+   <div class="form-label">Description</div>
+  </th>
+  <td>
+   <input tal:attributes="value request/description | nothing;" type="text" name="description" size="80" />
+  </td>
+ </tr>
+
+ <tr valign="top">
+  <td />
+  <td>
+   <input type="submit" value=" Add UMG " />
+  </td>
+ </tr>
+
+</table>
+</form>
+
+</div>
+</div>
+
+<!-- ==================================================================== -->
+
+<div tal:condition="updating">
+<div tal:define="group_id request/group_id;
+                 umg python:here.getGroupInfo(group_id);
+                 dn umg/dn;
+                 title umg/title;
+                 description umg/description;">
+<h3> Update UMG: <span tal:replace="group_id">UMG_ID</span></h3>
+
+<form action="manage_updateUMG" method="POST">
+<input type="hidden" name="group_id" value="UMG_ID"
+       tal:attributes="value group_id" />
+<table>
+
+ <tr valign="top">
+  <th align="right">
+   <div class="form-label">DN</div>
+  </th>
+  <td>
+   <input type="text" name="dn" size="80"
+     tal:attributes="value dn;"
+     />
+  </td>
+ </tr>
+
+ <tr valign="top">
+  <th align="right">
+   <div class="form-label">Title</div>
+  </th>
+  <td>
+   <input type="text" name="title" size="80"
+     tal:attributes="value title;"
+     />
+  </td>
+ </tr>
+
+ <tr valign="top">
+  <th align="right">
+   <div class="form-label">Description</div>
+  </th>
+  <td>
+   <input type="text" name="description" size="80"
+     tal:attributes="value description;"
+     />
+  </td>
+ </tr>
+
+ <tr valign="top">
+  <td />
+  <td>
+   <input type="submit" value="Update" />
+  </td>
+ </tr>
+
+</table>
+</form>
+
+</div>
+</div>
+
+</tal:block>
+
+<h1 tal:replace="structure here/manage_page_footer">Footer</h1>
