@@ -1,6 +1,7 @@
 from interfaces import IPSUUMGGroupManager
 from zope.interface import implements
 from AccessControl import ClassSecurityInfo
+from AccessControl.requestmethod import postonly
 from BTrees.OOBTree import OOBTree
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
 from Products.PlonePAS.interfaces.group import IGroupManagement, IGroupIntrospection
@@ -35,7 +36,6 @@ class PSUUMGGroupManager(BasePlugin):
     def __init__(self, id, title=None, host=None, email_domain=None):
         self.id = id
         self.title = title
-        self.host = host
         self.email_domain = email_domain
         self._groups = OOBTree()
 
@@ -135,7 +135,7 @@ class PSUUMGGroupManager(BasePlugin):
     
     security.declareProtected(ManageGroups, 'removeGroup')
     def removeGroup(self, group_id, **kw):
-        pass
+        del self._groups[ group_id ]
     
     security.declareProtected(ManageGroups, 'removePrincipalFromGroup')
     def removePrincipalFromGroup(self, principal_id, group_id):
@@ -205,6 +205,33 @@ class PSUUMGGroupManager(BasePlugin):
             RESPONSE.redirect( '%s/manage_groups?manage_tabs_message=%s'
                              % ( self.absolute_url(), message )
                              )
+            
+    security.declareProtected( ManageGroups, 'manage_removeUMGs' )
+    def manage_removeUMGs( self
+                           , group_ids
+                           , RESPONSE=None
+                           , REQUEST=None
+                           ):
+        """ Remove one or more groups via the ZMI.
+        """
+        group_ids = filter( None, group_ids )
+
+        if not group_ids:
+            message = 'no+groups+selected'
+
+        else:
+
+            for group_id in group_ids:
+                self.removeGroup( group_id )
+
+            message = 'Groups+removed'
+
+        if RESPONSE is not None:
+            RESPONSE.redirect( '%s/manage_groups?manage_tabs_message=%s'
+                             % ( self.absolute_url(), message )
+                             )
+    manage_removeUMGs = postonly(manage_removeUMGs)
+
 
     # this is borrowed from PlonePAS's group.py plugin
     security.declarePrivate('_findGroup')

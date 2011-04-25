@@ -30,7 +30,7 @@
      tal:repeat="umg python:umgs"
      tal:attributes="class python:repeat['umg'].odd() and 'row-normal' or default">
   <td>
-    <input type="checkbox" name="ids:list" value="ID" tal:attributes="value umg" />
+    <input type="checkbox" name="group_ids:list" value="ID" tal:attributes="value umg/id" />
   </td>
   <td>
     <a tal:attributes="href python:'?group_id=%s' % umg['id']">update</a>
