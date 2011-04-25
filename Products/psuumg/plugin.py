@@ -131,7 +131,13 @@ class PSUUMGGroupManager(BasePlugin):
         
     security.declarePrivate(ManageGroups, 'setRolesForGroup')
     def setRolesForGroup(self, group_id, roles=()):
-        pass
+        rmanagers = self._getPlugins().listPlugins(IRoleAssignerPlugin)
+        if not (rmanagers):
+            raise NotImplementedError, ('There is no plugin that can '
+                                        'assign roles to groups')
+        for rid, rmanager in rmanagers:
+            rmanager.assignRolesToPrincipal(roles, group_id)
+        self.invalidateGroup(group_id)
     
     security.declareProtected(ManageGroups, 'removeGroup')
     def removeGroup(self, group_id, **kw):
@@ -175,6 +181,7 @@ class PSUUMGGroupManager(BasePlugin):
                      , title=None
                      , description=None
                      , RESPONSE=None
+                     , REQUEST=None
                      ):
         """ Add a group via the ZMI.
         """
@@ -186,6 +193,7 @@ class PSUUMGGroupManager(BasePlugin):
             RESPONSE.redirect( '%s/manage_groups?manage_tabs_message=%s'
                              % ( self.absolute_url(), message )
                              )
+    manage_addUMG = postonly(manage_addUMG)
 
     security.declareProtected( ManageGroups, 'manage_updateUMG' )
     def manage_updateUMG( self
@@ -194,6 +202,7 @@ class PSUUMGGroupManager(BasePlugin):
                           , title
                           , description
                           , RESPONSE=None
+                          , REQUEST=None
                           ):
         """ Update a group via the ZMI.
         """
@@ -205,6 +214,7 @@ class PSUUMGGroupManager(BasePlugin):
             RESPONSE.redirect( '%s/manage_groups?manage_tabs_message=%s'
                              % ( self.absolute_url(), message )
                              )
+    manage_updateUMG = postonly(manage_updateUMG)
             
     security.declareProtected( ManageGroups, 'manage_removeUMGs' )
     def manage_removeUMGs( self
