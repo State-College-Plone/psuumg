@@ -295,13 +295,6 @@ class PSUUMGGroupManager(BasePlugin):
 
         return group.__of__(self)
     
-    security.declareProtected( ManageGroups, 'listGroupIds' )
-    def listGroupIds( self ):
-
-        """ -> ( group_id_1, ... group_id_n )
-        """
-        return self._groups.keys()
-    
     security.declareProtected( ManageGroups, 'listGroupInfo' )
     def listGroupInfo( self ):
 
