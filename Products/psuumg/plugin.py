@@ -2,11 +2,14 @@ from interfaces import IPSUUMGGroupManager
 from zope.interface import implements
 from AccessControl import ClassSecurityInfo
 from AccessControl.requestmethod import postonly
+from App.class_init import InitializeClass
 from BTrees.OOBTree import OOBTree
 from Products.PageTemplates.PageTemplateFile import PageTemplateFile
 from Products.PlonePAS.interfaces.group import IGroupManagement, IGroupIntrospection
 from Products.PlonePAS.interfaces.capabilities import IGroupCapability, IDeleteCapability
+from Products.PlonePAS.plugins.group import PloneGroup
 from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPlugin, IGroupsPlugin
+from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin, IRolesPlugin
 from Products.PluggableAuthService.permissions import ManageGroups
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
 
@@ -62,7 +65,7 @@ class PSUUMGGroupManager(BasePlugin):
         if group_ids:
             group_filter = None
         else:
-            group_ids = self.listGroupIds()
+            group_ids = self._groups.keys()
             group_filter = _PSUUMGGroupFilter(id, title, **kw)            
             
         for group_id in group_ids:
@@ -85,7 +88,8 @@ class PSUUMGGroupManager(BasePlugin):
     security.declarePrivate('getGroupsForPrincipal')
     def getGroupsForPrincipal(self, principal, request=None):
         # XXX: Test implementation
-        return ('umgtest',)
+        print "Asked for groups of principal %s" % principal
+        return ()
     
     # IGroupIntrospection
     def getGroupById(self, group_id, default=None):
@@ -104,6 +108,10 @@ class PSUUMGGroupManager(BasePlugin):
     
     def getGroupMembers(self, group_id):
         # XXX: Test implementation
+        print "Asked for members of UMG %s" % group_id
+        if group_id not in self._groups:
+            print "Not our group."
+            return ()
         return ()
     
     # IGroupManagement
@@ -242,6 +250,14 @@ class PSUUMGGroupManager(BasePlugin):
                              )
     manage_removeUMGs = postonly(manage_removeUMGs)
 
+    security.declarePrivate('_createGroup')
+    def _createGroup(self, plugins, group_id, name):
+        """ Create group object. For users, this can be done with a
+        plugin, but I don't care to define one for that now. Just uses
+        PloneGroup.  But, the code's still here, just commented out.
+        This method based on PluggableAuthervice._createUser
+        """
+        return UMG(group_id, name).__of__(self)
 
     # this is borrowed from PlonePAS's group.py plugin
     security.declarePrivate('_findGroup')
@@ -279,6 +295,13 @@ class PSUUMGGroupManager(BasePlugin):
 
         return group.__of__(self)
     
+    security.declareProtected( ManageGroups, 'listGroupIds' )
+    def listGroupIds( self ):
+
+        """ -> ( group_id_1, ... group_id_n )
+        """
+        return self._groups.keys()
+    
     security.declareProtected( ManageGroups, 'listGroupInfo' )
     def listGroupInfo( self ):
 
@@ -297,6 +320,8 @@ class PSUUMGGroupManager(BasePlugin):
         """
         return self._groups[ group_id ]
     
+InitializeClass(PSUUMGGroupManager)
+
 # borrowed from Products.PluggableAuthService.plugins.ZODBGroupManager.py
 class _PSUUMGGroupFilter:
     def __init__( self, id=None, title=None, **kw):
@@ -319,3 +344,31 @@ class _PSUUMGGroupFilter:
             if value.lower().find(contained.lower()) >= 0:
                 return 1
         return 0
+
+class UMG(PloneGroup):
+    """Plone expects a user to come, with approximately the same
+    behavior as a user.
+    """
+
+    security = ClassSecurityInfo()
+
+    security.declarePublic('getId')
+    def getId(self, unprefixed=None):
+        """ -> user ID
+        Modified to accept silly GRUF param.
+        """
+        return self._id
+    
+    security.declarePublic('addMember')
+    def addMember(self, id):
+        """Add the existing member with the given id to the group
+        """
+        pass
+
+    security.declarePublic('removeMember')
+    def removeMember(self, id):
+        """Remove the member with the provided id from the group.
+        """
+        pass
+
+InitializeClass(UMG)
