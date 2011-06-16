@@ -1,5 +1,6 @@
 from interfaces import IPSUUMGGroupManager
 from zope.interface import implements
+from zope.schema.fieldproperty import FieldProperty
 from AccessControl import ClassSecurityInfo
 from AccessControl.requestmethod import postonly
 from App.class_init import InitializeClass
@@ -12,15 +13,18 @@ from Products.PluggableAuthService.interfaces.plugins import IGroupEnumerationPl
 from Products.PluggableAuthService.interfaces.plugins import IPropertiesPlugin, IRolesPlugin
 from Products.PluggableAuthService.permissions import ManageGroups
 from Products.PluggableAuthService.plugins.BasePlugin import BasePlugin
+from utils import get_member_and_group_data
 
+import logging
+logger = logging.getLogger('Products.psuumg')
 
 manage_addPSUUMGGroupManagerForm = PageTemplateFile(
     'www/psuumgAdd.zpt', globals(), __name__='manage_addPSUUMGGroupManagerForm')
 
-def addPSUUMGGroupManager(dispatcher, id, title=None, REQUEST=None):
+def addPSUUMGGroupManager(dispatcher, id, title=None, host=None, base_dn=None, REQUEST=None):
     """Add a PSUUMGGroupManager to a Pluggable Auth Service."""
 
-    pugm = PSUUMGGroupManager(id, title)
+    pugm = PSUUMGGroupManager(id, title, host, base_dn)
     dispatcher._setObject(pugm.getId(), pugm)
 
     if REQUEST is not None:
@@ -36,10 +40,14 @@ class PSUUMGGroupManager(BasePlugin):
     security = ClassSecurityInfo()    
     implements(IPSUUMGGroupManager, IGroupEnumerationPlugin, IGroupsPlugin, IGroupIntrospection, IGroupManagement, IGroupCapability, IDeleteCapability)
     
-    def __init__(self, id, title=None, host=None, email_domain=None):
+    host = None
+    base_dn = None
+    
+    def __init__(self, id, title=None, host=None, base_dn=None):
         self.id = id
         self.title = title
-        self.email_domain = email_domain
+        self.host = host
+        self.base_dn = base_dn
         self._groups = OOBTree()
 
     # IGroupEnumerationPlugin
@@ -87,7 +95,6 @@ class PSUUMGGroupManager(BasePlugin):
     # IGroupsPlugin
     security.declarePrivate('getGroupsForPrincipal')
     def getGroupsForPrincipal(self, principal, request=None):
-        # XXX: Test implementation
         print "Asked for groups of principal %s" % principal
         return ()
     
@@ -107,12 +114,15 @@ class PSUUMGGroupManager(BasePlugin):
         return self._groups.keys()
     
     def getGroupMembers(self, group_id):
-        # XXX: Test implementation
         print "Asked for members of UMG %s" % group_id
         if group_id not in self._groups:
             print "Not our group."
             return ()
-        return ()
+        #XXX we might be able to use _data[1] more efficiently
+        import ldap
+        conn = ldap.open(self.host)
+        umg = conn.search_st(self.base_dn, ldap.SCOPE_SUBTREE, filterstr='(cn=umg/personal.cah190.webliondevtest)', attrlist=['memberUid'], timeout=5)
+        return umg[0][1]['memberUid']
     
     # IGroupManagement
     security.declarePrivate(ManageGroups, 'addGroup')
@@ -312,6 +322,23 @@ class PSUUMGGroupManager(BasePlugin):
         """ group_id -> {}
         """
         return self._groups[ group_id ]
+    
+    def _data(self):
+        """Return the (possibly cached) user and group info from LDAP as a
+        2-item tuple: (users, groups).
+        
+        On failure, return empty info (so at least people can log into the
+        site using other PAS plugins) and log the failure at level ERROR.
+        """
+        import pdb; pdb.set_trace()
+        users, groups = get_member_and_group_data(self.host, self.base_dn, self._groups)
+        return users, groups
+        try:
+            users, groups = get_member_and_group_data(self.host, self.base_dn, self._groups)
+        except Exception, e:
+            users, groups = {}, set()
+            logger.error(str(type(e)) + ": " + str(e))
+        return users, groups
     
 InitializeClass(PSUUMGGroupManager)
 

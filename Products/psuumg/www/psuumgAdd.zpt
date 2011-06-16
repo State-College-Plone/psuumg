@@ -36,17 +36,17 @@ PSU UMG Group Managers are containers for UMG-based groups.
     </div>
     </td>
     <td align="left" valign="top">
-    <input type="text" name="host" value="ldap.psu.edu" />
+    <input type="text" name="host" value="dirapps.aset.psu.edu" />
     </td>
   </tr>
   <tr>
     <td align="left" valign="top">
     <div class="form-label">
-    Email Domain
+    Search Base
     </div>
     </td>
     <td align="left" valign="top">
-    <input type="text" name="email_domain" value="psu.edu" />
+    <input type="text" name="base_dn" value="dc=psu,dc=edu" />
     </td>
   </tr>
   <tr>
