@@ -25,7 +25,10 @@ setup(name='Products.psuumg',
     zip_safe=False,
     install_requires=[
       'setuptools',
-      'python-ldap',
+      'python-ldap<2.4',
+      'Products.WebServerAuth',
+      'Products.PluggableAuthService',
+      'Products.PlonePAS',
       ],
     entry_points="""
       """,
